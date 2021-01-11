@@ -44,7 +44,7 @@ need to package Docker your way, without denaturing it in the process.
 To build Docker, you will need the following:
 
 * A recent version of Git and Mercurial
-* Go version 1.4 or later
+* Go version 1.6 or later
 * A clean checkout of the source added to a valid [Go
   workspace](https://golang.org/doc/code.html#Workspaces) under the path
   *src/github.com/docker/docker* (unless you plan to use `AUTO_GOPATH`,
@@ -59,7 +59,6 @@ To build the Docker daemon, you will additionally need:
 * btrfs-progs version 3.16.1 or later (unless using an older version is
   absolutely necessary, in which case 3.8 is the minimum)
 * libseccomp version 2.2.1 or later (for build tag seccomp)
-* yubico-piv-tool version 1.1.0 or later (for experimental)
 
 Be sure to also check out Docker's Dockerfile for the most up-to-date list of
 these build-time dependencies.
@@ -74,7 +73,7 @@ To use the vendored dependencies, simply make sure the path to "./vendor" is
 included in `GOPATH` (or use `AUTO_GOPATH`, as explained below).
 
 If you would rather (or must, due to distro policy) package these dependencies
-yourself, take a look at "./hack/vendor.sh" for an easy-to-parse list of the
+yourself, take a look at "vendor.conf" for an easy-to-parse list of the
 exact version for each.
 
 NOTE: if you're not able to package the exact version (to the exact commit) of a
@@ -158,9 +157,9 @@ export DOCKER_BUILDTAGS='apparmor'
 ```
 
 If you're building a binary that may need to be used on platforms that include
-SELinux, you will need to use the `selinux` build tag:
+seccomp, you will need to use the `seccomp` build tag:
 ```bash
-export DOCKER_BUILDTAGS='selinux'
+export DOCKER_BUILDTAGS='seccomp'
 ```
 
 There are build tags for disabling graphdrivers as well. By default, support
@@ -183,8 +182,14 @@ export DOCKER_BUILDTAGS='exclude_graphdriver_aufs'
 
 NOTE: if you need to set more than one build tag, space separate them:
 ```bash
-export DOCKER_BUILDTAGS='apparmor selinux exclude_graphdriver_aufs'
+export DOCKER_BUILDTAGS='apparmor exclude_graphdriver_aufs'
 ```
+
+### LCOW (Linux Containers On Windows)
+
+LCOW is an experimental feature on Windows, and requires the daemon to run with
+experimental features enabled. Use the `no_lcow` build tag to disable the LCOW
+feature at compile time, 
 
 ### Static Daemon
 
@@ -210,10 +215,10 @@ the file "./VERSION". This binary is usually installed somewhere like
 
 ### Dynamic Daemon / Client-only Binary
 
-If you are only interested in a Docker client binary, set `DOCKER_CLIENTONLY` to a non-empty value using something similar to the following:
+If you are only interested in a Docker client binary, you can build using:
 
 ```bash
-export DOCKER_CLIENTONLY=1
+./hack/make.sh binary-client
 ```
 
 If you need to (due to distro policy, distro library availability, or for other
@@ -222,11 +227,32 @@ interested in creating a client binary for Docker, use something similar to the
 following:
 
 ```bash
-./hack/make.sh dynbinary
+./hack/make.sh dynbinary-client
 ```
 
-This will create "./bundles/$VERSION/dynbinary/docker-$VERSION", which for
+This will create "./bundles/$VERSION/dynbinary-client/docker-$VERSION", which for
 client-only builds is the important file to grab and install as appropriate.
+
+### Cross Compilation
+
+Limited cross compilation is supported due to requiring cgo for critical
+functionality (such as seccomp support).
+
+To cross compile run `make cross`. You can specify the platforms to target by
+setting the `DOCKER_CROSSPLATFORMS` environment variable to a list of platforms
+in the format `<GOOS>/<GOARCH>`. Specify multiple platforms by using a space
+in between each desired platform.
+
+For setting arm variants, you can specify the `GOARM` value by append `/v<GOARM>`
+to your `<GOOS>/arm`. Example:
+
+```
+make DOCKER_CROSSPLATFORMS=linux/arm/v7 cross
+```
+
+This will create a linux binary targeting arm 7.
+
+See `hack/make/.binary` for supported cross compliation platforms.
 
 ## System Dependencies
 
@@ -287,7 +313,7 @@ appropriate for your distro's init script to live there too!).
 In general, Docker should be run as root, similar to the following:
 
 ```bash
-docker daemon
+dockerd
 ```
 
 Generally, a `DOCKER_OPTS` variable of some kind is available for adding more

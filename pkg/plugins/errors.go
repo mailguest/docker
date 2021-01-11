@@ -1,4 +1,4 @@
-package plugins
+package plugins // import "github.com/docker/docker/pkg/plugins"
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ type statusError struct {
 	err    string
 }
 
-// Error returns a formated string for this error type
+// Error returns a formatted string for this error type
 func (e *statusError) Error() string {
 	return fmt.Sprintf("%s: %v", e.method, e.err)
 }

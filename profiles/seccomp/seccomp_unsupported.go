@@ -1,9 +1,8 @@
 // +build linux,!seccomp
 
-package seccomp
+package seccomp // import "github.com/docker/docker/profiles/seccomp"
 
-import "github.com/opencontainers/runc/libcontainer/configs"
-
-var (
-	defaultSeccompProfile *configs.Seccomp
-)
+// DefaultProfile returns a nil pointer on unsupported systems.
+func DefaultProfile() *Seccomp {
+	return nil
+}
